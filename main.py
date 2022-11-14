@@ -5,8 +5,23 @@ from tkinter import ttk
 from typing import List
 
 
-# TODO: sort by file/dir name -> add combobox -> redesign of grid -> add remove and rename button -> add VS code open button -> button for sorting on file/dir name or timestamp created
+# TODO: add combobox -> add remove and rename button -> add VS code open button -> button for sorting on file/dir name or timestamp created
 # TODO: nice to have: make entry/combobox flash red if path does not exist
+
+def attach_icon(path: str, file_or_dir_name: str) -> str:
+    full_path = path + "/" + file_or_dir_name
+    icon = ""
+    if os.path.isdir(full_path):
+        icon = u"\U0001F4C2"
+    elif os.path.isfile(full_path):
+        icon = u"\U0001F4C4"
+    return icon + " " + file_or_dir_name
+
+
+def get_directory_with_icons(path_entered: ttk.Entry) -> List[str]:
+    path = path_entered.get()
+    return sorted([attach_icon(path, f) for f in os.listdir(path)])
+
 
 def set_path_if_dir(e: tk.Event) -> None:
     files, path, list_box = tk.StringVar(), tk.StringVar(), e.widget
@@ -29,21 +44,6 @@ def set_path_entry(e: tk.Event) -> None:
     elif e.widget == second_path_entry:
         files, path = r_files, second_path
     files.set(get_directory_with_icons(path))
-
-
-def attach_icon(path: str, file_or_dir_name: str) -> str:
-    full_path = path + "/" + file_or_dir_name
-    icon = ""
-    if os.path.isdir(full_path):
-        icon = u"\U0001F4C2"
-    elif os.path.isfile(full_path):
-        icon = u"\U0001F4C4"
-    return icon + " " + file_or_dir_name
-
-
-def get_directory_with_icons(path_entered: ttk.Entry) -> List[str]:
-    path = path_entered.get()
-    return [attach_icon(path, f) for f in os.listdir(path)]
 
 
 def move_file(direction: str) -> None:
@@ -81,19 +81,29 @@ if __name__ == "__main__":
     msgbox2 = tk.Listbox(mainframe, listvariable=r_files, background="white", width=30, height=40)
     msgbox.focus()
 
-    first_path_entry.grid(row=0, column=0)
-    first_path_entry.bind('<Return>', lambda e: set_path_entry(e))
-    second_path_entry.grid(row=0, column=4)
-    second_path_entry.bind('<Return>', lambda e: set_path_entry(e))
-    msgbox.grid(row=1, column=0, rowspan=2, padx=10)
-    msgbox.bind('<Double-1>', lambda e: set_path_if_dir(e))
-    tk.ttk.Separator(mainframe, orient="vertical").grid(column=1, row=0, rowspan=3, sticky='ns')
-    move_forward_button = tk.ttk.Button(mainframe, text="->", command=lambda: move_file("forward"), width=2)
-    move_forward_button.grid(row=1, column=2, padx=10, pady=10)
+    rename_button = tk.ttk.Button(mainframe, text="Rename", command=lambda: print("rename"), width=6)
+    rename_button.grid(row=0, column=0, padx=5, pady=5)
     move_backward_button = tk.ttk.Button(mainframe, text="<-", command=lambda: move_file("backward"), width=2)
-    move_backward_button.grid(row=2, column=2, padx=10, pady=10)
-    tk.ttk.Separator(mainframe, orient="vertical").grid(column=3, row=0, rowspan=3, sticky='ns')
-    msgbox2.grid(row=1,column=4, rowspan=2, padx=10)
+    move_backward_button.grid(row=0, column=1, padx=5, pady=5)
+    remove_button = tk.ttk.Button(mainframe, text="X", command=lambda: print("remove"), width=2)
+    remove_button.grid(row=0, column=2, padx=5, pady=5)
+    move_forward_button = tk.ttk.Button(mainframe, text="->", command=lambda: move_file("forward"), width=2)
+    move_forward_button.grid(row=0, column=3, padx=5, pady=5)
+    vs_code_button = tk.ttk.Button(mainframe, text="VS code", command=lambda: print("Open in VS code"), width=8)
+    vs_code_button.grid(row=0, column=4, padx=5, pady=5)
+
+    first_path_entry.grid(row=1, column=0, columnspan=2)
+    first_path_entry.bind('<Return>', lambda e: set_path_entry(e))
+    second_path_entry.grid(row=1, column=3, columnspan=2)
+    second_path_entry.bind('<Return>', lambda e: set_path_entry(e))
+
+    msgbox.grid(row=2, column=0, rowspan=2, columnspan=2, padx=10)
+    msgbox.bind('<Double-1>', lambda e: set_path_if_dir(e))
+
+    tk.ttk.Separator(mainframe, orient="vertical").grid(column=2, row=1, rowspan=3, sticky='ns')
+
+    msgbox2.grid(row=2, column=3, rowspan=2, columnspan=2, padx=10)
     msgbox2.bind('<Double-1>', lambda e: set_path_if_dir(e))
     msgbox.selection_set(0)
+
     root.mainloop()
