@@ -4,32 +4,31 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List
 
-# TODO:add combobox -> redesign of grid -> add remove button -> add VS code open button
+
+# TODO: sort by file/dir name -> add combobox -> redesign of grid -> add remove and rename button -> add VS code open button -> button for sorting on file/dir name or timestamp created
+# TODO: nice to have: make entry/combobox flash red if path does not exist
+
+def set_path_if_dir(e: tk.Event) -> None:
+    files, path, list_box = tk.StringVar(), tk.StringVar(), e.widget
+    if list_box == msgbox:
+        files, path = l_files, first_path
+    elif list_box == msgbox2:
+        files, path = r_files, second_path
+
+    selection = list_box.curselection()
+    new_path = path.get() + '/' + list_box.get(selection[0])[2:]
+    if os.path.isdir(new_path):
+        path.set(new_path)
+        files.set(get_directory_with_icons(path))
 
 
-def set_left_path_if_dir():
-    selection = msgbox.curselection()
-    source_path = first_path.get() + '/' + msgbox.get(selection[0])[2:]
-    if os.path.isdir(source_path):
-        first_path.set(source_path)
-        l_files.set(get_directory_with_icons(first_path))
-
-
-def set_right_path_if_dir():
-    selection = msgbox2.curselection()
-    destination_path = second_path.get() + '/' + msgbox2.get(selection[0])[2:]
-    if os.path.isdir(destination_path):
-        second_path.set(destination_path)
-        r_files.set(get_directory_with_icons(second_path))
-
-
-# TODO: generalize functions on widgets
-def set_left_path() -> None:
-    l_files.set(get_directory_with_icons(first_path))
-
-
-def set_right_path() -> None:
-    r_files.set(get_directory_with_icons(second_path))
+def set_path_entry(e: tk.Event) -> None:
+    files, path = tk.StringVar(), tk.StringVar()
+    if e.widget == first_path_entry:
+        files, path = l_files, first_path
+    elif e.widget == second_path_entry:
+        files, path = r_files, second_path
+    files.set(get_directory_with_icons(path))
 
 
 def attach_icon(path: str, file_or_dir_name: str) -> str:
@@ -42,27 +41,20 @@ def attach_icon(path: str, file_or_dir_name: str) -> str:
     return icon + " " + file_or_dir_name
 
 
-# TODO: create dropdown for path -> Combobox
 def get_directory_with_icons(path_entered: ttk.Entry) -> List[str]:
     path = path_entered.get()
     return [attach_icon(path, f) for f in os.listdir(path)]
 
 
-def move_file_backward():
-    selection = msgbox2.curselection()
-    source_path = second_path.get() + '/' + msgbox2.get(selection[0])[2:]
-    destination_path = first_path.get()
-    shutil.move(source_path, destination_path)
-    l_files.set(get_directory_with_icons(first_path))
-    r_files.set(get_directory_with_icons(second_path))
-
-
-# TODO: merge 2 move methods
-def move_file_forward():
-    selection = msgbox.curselection()
-    source_path = first_path.get() + '/' + msgbox.get(selection[0])[2:]
-    destination_path = second_path.get()
-    shutil.move(source_path, destination_path)
+def move_file(direction: str) -> None:
+    source_folder, destination_folder, list_box = "", "", None
+    if direction == "forward":
+        source_folder, destination_folder, list_box = first_path.get(), second_path.get(), msgbox
+    elif direction == "backward":
+        source_folder, destination_folder, list_box = second_path.get(), first_path.get(), msgbox2
+    selection = list_box.curselection()
+    source_path = source_folder + '/' + list_box.get(selection[0])[2:]
+    shutil.move(source_path, destination_folder)
     l_files.set(get_directory_with_icons(first_path))
     r_files.set(get_directory_with_icons(second_path))
 
@@ -90,18 +82,18 @@ if __name__ == "__main__":
     msgbox.focus()
 
     first_path_entry.grid(row=0, column=0)
-    first_path_entry.bind('<Return>', lambda e: set_left_path())
+    first_path_entry.bind('<Return>', lambda e: set_path_entry(e))
     second_path_entry.grid(row=0, column=4)
-    second_path_entry.bind('<Return>', lambda e: set_right_path())
+    second_path_entry.bind('<Return>', lambda e: set_path_entry(e))
     msgbox.grid(row=1, column=0, rowspan=2, padx=10)
-    msgbox.bind('<Double-1>', lambda e: set_left_path_if_dir())
+    msgbox.bind('<Double-1>', lambda e: set_path_if_dir(e))
     tk.ttk.Separator(mainframe, orient="vertical").grid(column=1, row=0, rowspan=3, sticky='ns')
-    move_forward_button = tk.ttk.Button(mainframe, text="->", command=move_file_forward, width=2)
+    move_forward_button = tk.ttk.Button(mainframe, text="->", command=lambda: move_file("forward"), width=2)
     move_forward_button.grid(row=1, column=2, padx=10, pady=10)
-    move_backward_button = tk.ttk.Button(mainframe, text="<-", command=move_file_backward, width=2)
+    move_backward_button = tk.ttk.Button(mainframe, text="<-", command=lambda: move_file("backward"), width=2)
     move_backward_button.grid(row=2, column=2, padx=10, pady=10)
     tk.ttk.Separator(mainframe, orient="vertical").grid(column=3, row=0, rowspan=3, sticky='ns')
     msgbox2.grid(row=1,column=4, rowspan=2, padx=10)
-    msgbox2.bind('<Double-1>', lambda e: set_right_path_if_dir())
+    msgbox2.bind('<Double-1>', lambda e: set_path_if_dir(e))
     msgbox.selection_set(0)
     root.mainloop()
