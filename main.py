@@ -2,11 +2,24 @@ import os
 import shutil
 import tkinter as tk
 from tkinter import ttk
+from tkinter.simpledialog import askstring
 from typing import List
 
 
-# TODO: add combobox -> add remove and rename button -> add VS code open button -> button for sorting on file/dir name or timestamp created
+# TODO: add combobox -> add remove button -> add VS code open button -> button for sorting on file/dir name or timestamp created
 # TODO: nice to have: make entry/combobox flash red if path does not exist
+
+def populate_combo(path: str) -> List[str]:
+    all_dirs_up = []
+    start = path
+    for _ in range(4):
+        dir_up = os.path.dirname(start)
+        if dir_up == "/":
+            break
+        all_dirs_up.append(dir_up)
+        start = dir_up
+    return all_dirs_up
+
 
 def attach_icon(path: str, file_or_dir_name: str) -> str:
     full_path = path + "/" + file_or_dir_name
@@ -23,43 +36,58 @@ def get_directory_with_icons(path_entered: ttk.Entry) -> List[str]:
     return sorted([attach_icon(path, f) for f in os.listdir(path)])
 
 
+def rename_file() -> None:
+    files, path = tk.StringVar(), tk.StringVar()
+    list_box = [box for box in [msgbox, msgbox2] if len(box.curselection()) > 0][0]
+    if list_box == msgbox:
+       files, path = l_files, first_path_combo
+    elif list_box == msgbox2:
+       files, path = r_files, second_path
+    old_path = path.get() + "/" + list_box.get(list_box.curselection()[0])[2:]
+    new_name = askstring("Rename", "New file/directory name?")
+    new_path = path.get() + "/" + new_name
+    os.rename(old_path, new_path)
+    files.set(get_directory_with_icons(path))
+
+
 def set_path_if_dir(e: tk.Event) -> None:
     files, path, list_box = tk.StringVar(), tk.StringVar(), e.widget
     if list_box == msgbox:
-        files, path = l_files, first_path
+        files, path = l_files, first_path_combo
     elif list_box == msgbox2:
-        files, path = r_files, second_path
+        files, path = r_files, second_path_combo
 
     selection = list_box.curselection()
     new_path = path.get() + '/' + list_box.get(selection[0])[2:]
     if os.path.isdir(new_path):
         path.set(new_path)
         files.set(get_directory_with_icons(path))
+        path["values"] = populate_combo(path.get())
 
 
 def set_path_entry(e: tk.Event) -> None:
-    files, path = tk.StringVar(), tk.StringVar()
-    if e.widget == first_path_entry:
-        files, path = l_files, first_path
-    elif e.widget == second_path_entry:
-        files, path = r_files, second_path
-    files.set(get_directory_with_icons(path))
+    files = tk.StringVar()
+    if e.widget == first_path_combo:
+        files = l_files
+    elif e.widget == second_path_combo:
+        files = r_files
+    files.set(get_directory_with_icons(e.widget))
+    e.widget["values"] = populate_combo(e.widget.get())
 
 
 def move_file(direction: str) -> None:
     source_folder, destination_folder, list_box = "", "", None
     if direction == "forward":
-        source_folder, destination_folder, list_box = first_path.get(), second_path.get(), msgbox
+        source_folder, destination_folder, list_box = first_path_combo.get(), second_path_combo.get(), msgbox
     elif direction == "backward":
-        source_folder, destination_folder, list_box = second_path.get(), first_path.get(), msgbox2
+        source_folder, destination_folder, list_box = second_path_combo.get(), first_path_combo.get(), msgbox2
     selection = list_box.curselection()
     source_path = source_folder + '/' + list_box.get(selection[0])[2:]
     shutil.move(source_path, destination_folder)
-    l_files.set(get_directory_with_icons(first_path))
+    l_files.set(get_directory_with_icons(first_path_combo))
     r_files.set(get_directory_with_icons(second_path))
 
 
-# TODO: add double click event for directories
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("file-commander")
@@ -69,10 +97,7 @@ if __name__ == "__main__":
     root.rowconfigure(0, weight=1)
 
     first_path = tk.StringVar(value="/Users/thibauld.croonenborghs/Desktop/test")
-    first_path_entry = ttk.Entry(mainframe, textvariable=first_path, width=30)
-
     second_path = tk.StringVar(value="/Users/thibauld.croonenborghs/Desktop/test2")
-    second_path_entry = ttk.Entry(mainframe, textvariable=second_path, width=30)
 
     l_files = tk.StringVar(value=get_directory_with_icons(first_path))
     r_files = tk.StringVar(value=get_directory_with_icons(second_path))
@@ -81,7 +106,7 @@ if __name__ == "__main__":
     msgbox2 = tk.Listbox(mainframe, listvariable=r_files, background="white", width=30, height=40)
     msgbox.focus()
 
-    rename_button = tk.ttk.Button(mainframe, text="Rename", command=lambda: print("rename"), width=6)
+    rename_button = tk.ttk.Button(mainframe, text="Rename", command=lambda: rename_file(), width=6)
     rename_button.grid(row=0, column=0, padx=5, pady=5)
     move_backward_button = tk.ttk.Button(mainframe, text="<-", command=lambda: move_file("backward"), width=2)
     move_backward_button.grid(row=0, column=1, padx=5, pady=5)
@@ -92,15 +117,23 @@ if __name__ == "__main__":
     vs_code_button = tk.ttk.Button(mainframe, text="VS code", command=lambda: print("Open in VS code"), width=8)
     vs_code_button.grid(row=0, column=4, padx=5, pady=5)
 
-    first_path_entry.grid(row=1, column=0, columnspan=2)
-    first_path_entry.bind('<Return>', lambda e: set_path_entry(e))
-    second_path_entry.grid(row=1, column=3, columnspan=2)
-    second_path_entry.bind('<Return>', lambda e: set_path_entry(e))
+    first_path_combo = ttk.Combobox(mainframe, textvariable=first_path, width=30)
+    first_path_combo["values"] = populate_combo(str(first_path))
+    first_path_combo.grid(row=1, column=0, columnspan=2, pady=10)
+    first_path_combo.bind('<Return>', lambda e: set_path_entry(e))
+    first_path_combo.bind('<<ComboboxSelected>>', lambda e: set_path_entry(e))
+
+    second_path_combo = ttk.Combobox(mainframe, textvariable=second_path, width=30)
+    second_path_combo["values"] = populate_combo(str(second_path))
+    second_path_combo.grid(row=1, column=3, columnspan=2, pady=10)
+    second_path_combo.bind('<Return>', lambda e: set_path_entry(e))
+    second_path_combo.bind('<<ComboboxSelected>>', lambda e: set_path_entry(e))
+
 
     msgbox.grid(row=2, column=0, rowspan=2, columnspan=2, padx=10)
     msgbox.bind('<Double-1>', lambda e: set_path_if_dir(e))
 
-    tk.ttk.Separator(mainframe, orient="vertical").grid(column=2, row=1, rowspan=3, sticky='ns')
+    tk.ttk.Separator(mainframe, orient="vertical").grid(column=2, row=2, rowspan=3, sticky='ns')
 
     msgbox2.grid(row=2, column=3, rowspan=2, columnspan=2, padx=10)
     msgbox2.bind('<Double-1>', lambda e: set_path_if_dir(e))
