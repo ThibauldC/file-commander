@@ -6,9 +6,10 @@ from tkinter.simpledialog import askstring
 from typing import List
 
 
-# TODO: add make directory functionality -> add move folder functionality -> add VS code open button -> button for sorting on file/dir name or timestamp created
+# TODO: add move folder functionality -> add VS code open button -> button for sorting on file/dir name or timestamp created
 # TODO: nice to have: make combobox flash red if path does not exist
-# TODO: refactor GUI into class
+# TODO: refactor GUI into class -> does this have any advantage?
+# TODO: bug: create directory works, but if you go in the newly created directory, you cannot create a file
 
 def populate_combo(path: str) -> List[str]:
     all_dirs_up = []
@@ -62,6 +63,18 @@ def create_file() -> None:
     if not os.path.exists(new_file_path):
         with open(new_file_path, "w"):
             pass
+    files.set(get_directory_with_icons(path))
+
+
+def create_directory() -> None:
+    list_box = [box for box in [msgbox, msgbox2] if len(box.curselection()) > 0][0]
+    if list_box == msgbox:
+       files, path = l_files, first_path_combo
+    else:
+       files, path = r_files, second_path_combo
+    directory_name = askstring("New directory", "Enter directory name")
+    new_dir = path.get() + "/" + directory_name
+    os.makedirs(new_dir, exist_ok=True)
     files.set(get_directory_with_icons(path))
 
 
@@ -143,7 +156,7 @@ if __name__ == "__main__":
     make_file_button.grid(row=0, column=1, padx=5, pady=5)
     remove_button = tk.ttk.Button(mainframe, text="X", command=lambda: remove_file(), width=2)
     remove_button.grid(row=0, column=2, padx=5, pady=5)
-    make_dir_button = tk.ttk.Button(mainframe, text="mkdir", command=lambda: print("make dir"), width=6)
+    make_dir_button = tk.ttk.Button(mainframe, text="mkdir", command=lambda: create_directory(), width=6)
     make_dir_button.grid(row=0, column=3, padx=5, pady=5)
     vs_code_button = tk.ttk.Button(mainframe, text="VS code", command=lambda: print("Open in VS code"), width=8)
     vs_code_button.grid(row=0, column=4, padx=5, pady=5)
