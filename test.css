@@ -1,0 +1,12 @@
+Container {
+    layout: horizontal;
+}
+
+DirectoryTree {
+    width: 50%;
+    dock: left
+}
+
+Input {
+    width: 100%;
+}
