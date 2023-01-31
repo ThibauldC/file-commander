@@ -2,11 +2,14 @@ Container {
     layout: horizontal;
 }
 
-DirectoryTree {
-    width: 50%;
-    dock: left
-}
-
 Input {
     width: 100%;
+}
+
+.display_container {
+    width: 50%
+}
+
+#test_container {
+    width: 100%
 }
