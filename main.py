@@ -1,23 +1,17 @@
 import os
 import shutil
-from pathlib import Path
 
 from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Container
-from textual.reactive import var, reactive, Reactive
-from textual.widgets import Header, Footer, DirectoryTree, TextLog, Input, TreeNode
+from textual.reactive import reactive, Reactive
+from textual.widgets import Header, Footer, Input, TreeNode
+
+from directory_display import DirectoryDisplay, DisplayContainer
+
 
 #TODO: use input to change path
 # TODO: use events and/or separate widget classes to clean up code?
-class DirectoryDisplay(DirectoryTree):
-    BINDINGS = [
-        ("z", "test_binding", "Test Binding")
-    ]
-
-    def action_test_binding(self):
-        self.reset_focus()
-
 
 class FileCommander(App):
     CSS_PATH = "test.css"
@@ -26,7 +20,7 @@ class FileCommander(App):
         ("q", "quit", "Quit"),
         ("m", "move_file", "Move"),
         ("t", "test_path", "Test path"),
-        ("c", "close_right_screen", "Close right screen")
+        ("c", "close_right_screen", "Close right screen"),
         #add change directory path textlog widget -> set active through focus -> on_key event
     ]
     path: Reactive[str] = reactive("/Users/thibauld.croonenborghs/Desktop/test")
@@ -36,7 +30,8 @@ class FileCommander(App):
     def compose(self) -> ComposeResult:
         yield Header()
         #yield Container(DirectoryTree(self.path, id="left"))
-        yield Container(Container(DirectoryDisplay(self.path, id="left_tree"), classes="display_container", id="left"), Container(classes="display_container", id="right"), id="test_container")
+        #yield Container(Container(LeftDirectoryDisplay(self.path, id="left_tree"), classes="display_container", id="left"), Container(RightDirectoryDisplay(str(Path.home()), id="right_tree"), classes="display_container", id="right"), id="test_container")
+        yield DisplayContainer()
         yield Input(id="text_input")
         yield Footer()
 
@@ -55,7 +50,6 @@ class FileCommander(App):
         left_tree = self.query_one("#left_tree")
         if left_tree.has_focus:
             #does not have to be mounted with second round of moving
-            self.query_one("#right").mount(DirectoryDisplay(str(Path.home()), id="right_tree"))
             left_tree.reset_focus()
             self.query_one("#right_tree").focus()
             self.l_file_path = self._get_path("left_tree")
