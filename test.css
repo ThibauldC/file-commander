@@ -7,9 +7,14 @@ Input {
 }
 
 .display_container {
-    width: 50%
+    layout: vertical;
+    width: 50%;
+}
+
+.path_input {
+    width: 100%
 }
 
 DisplayContainer {
-    width: 100%
+    width: 100%;
 }
