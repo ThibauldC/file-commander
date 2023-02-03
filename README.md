@@ -1,2 +1,3 @@
 # File Commander
-![Screenshot](images/screenshot_mac.png)
+## Commands:
+- `m`: go into file movement mode
