@@ -1,3 +1,5 @@
 # File Commander
 ## Commands:
-- `m`: go into file movement mode
+- `->`: open up second display
+- `<-`: move to first display
+- `m`: move file/dir from left to right 

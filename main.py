@@ -6,9 +6,9 @@ from textual.app import App, ComposeResult
 from textual.css.query import NoMatches
 from textual.message import Message, MessageTarget
 from textual.reactive import reactive, Reactive
-from textual.widgets import Header, Footer, Input, TreeNode
+from textual.widgets import Header, Footer, Input, TreeNode, DirectoryTree
 
-from directory_display import DisplayContainer, RightDirectoryDisplay
+from directory_display import DisplayContainer, RightDirectoryDisplay, LeftDirectoryDisplay, DirectoryDisplay
 
 
 #TODO: use input to change path
@@ -16,14 +16,16 @@ from directory_display import DisplayContainer, RightDirectoryDisplay
 
 class CustomInput(Input):
 
-    class Move(Message):
+    def __init__(self, origin: DirectoryDisplay | None = None):
+        self.origin = origin
+        super().__init__()
+
+    class ChangePath(Message):
         def __init__(self, sender: MessageTarget):
             super().__init__(sender)
 
     # def key_enter(self):
-    #     match self.value:
-    #         case "move":
-    #             self.emit_no_wait(self.Move(self))
+    #     self.emit_no_wait(self.ChangePath(self))
 
 
 class FileCommander(App):
@@ -37,30 +39,41 @@ class FileCommander(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield DisplayContainer()
-        yield CustomInput(id="text_input")
+        yield CustomInput()
         yield Footer()
 
     def on_mount(self, event: events.Mount) -> None:
         self.query_one("#left_tree").focus()
 
-    # TODO: make refresh method
     def on_right_directory_display_move(self, m: RightDirectoryDisplay.Move):
         m.stop()
         try:
-            left_path = self.query_one("#left_tree").get_path()
-            right_path = self.query_one("#right_tree").get_path()
-            shutil.move(left_path.path, right_path.path)
+            left_tree = self.query_one("#left_tree")
+            right_tree = self.query_one("#right_tree")
+            shutil.move(left_tree.get_path().path, right_tree.get_path().path)
+            left_tree.clear()
+            left_tree.data = left_tree.load_directory(left_tree.root) # TODO: refactor this into refresh method
+            #line = right_tree.cursor_line
+            right_tree.clear()
+            right_tree.data = right_tree.load_directory(right_tree.root) #TODO: but auto-expand tree node that was open? -> cursor_node.label
         except NoMatches:
             pass
 
-    # def on_input_submitted(self, e: Input.Submitted):
-    #     e.stop()
-    #     try:
-    #         left_path = self.query_one("#left_tree").get_path()
-    #         right_path = self.query_one("#right_tree").get_path()
-    #         self.query_one("CustomInput").value = f"{left_path} -> {right_path}"
-    #     except NoMatches:
-    #         pass
+    def on_directory_display_change_path(self, e: DirectoryDisplay.ChangePath):
+        e.stop()
+        input = self.query_one("CustomInput")
+        input.origin = e.sender
+        input.focus()
+        input.value = str(e.sender.path)
+
+    def on_input_submitted(self, e: Input.Submitted):
+        e.stop() #BUG: when executed twice in a row it fails
+        tree = e.sender.origin
+        tree.remove()
+        if isinstance(tree, LeftDirectoryDisplay):
+            self.query_one("#left").mount(LeftDirectoryDisplay(e.value, id=tree.id))
+        elif isinstance(tree, RightDirectoryDisplay):
+            self.query_one("#right").mount(RightDirectoryDisplay(e.value, id=tree.id))
 
     def key_colon(self):
         self.query_one("CustomInput").focus()
@@ -68,15 +81,16 @@ class FileCommander(App):
     def action_test_path(self) -> None:
         tree = self.query_one("#left_tree")
         try:
-            line = tree._tree_lines[tree.cursor_line]
+            #line = tree._tree_lines[tree.cursor_line]
+            line = tree.cursor_node.label.text
         except IndexError:
             pass
         else:
-            node = line.path[-1]
-            dir_entry = node.data
+            # node = line.path[-1]
+            # dir_entry = node.data
             input = self.query_one("Input")
             input.focus()
-            input.value = dir_entry.path
+            input.value = line
 
 
 if __name__ == "__main__":
