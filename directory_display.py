@@ -1,4 +1,4 @@
-import os
+#import os
 from pathlib import Path
 
 from textual.app import ComposeResult
@@ -7,6 +7,7 @@ from textual.css.query import NoMatches
 from textual.message import Message, MessageTarget
 from textual.reactive import reactive, Reactive
 from textual.widgets import DirectoryTree
+from textual.widgets._directory_tree import DirEntry
 
 
 class DirectoryDisplay(DirectoryTree):
@@ -14,13 +15,21 @@ class DirectoryDisplay(DirectoryTree):
         ("z", "test_binding", "Test Binding")
     ]
 
+    class ChangePath(Message):
+        def __init__(self, sender: MessageTarget):
+            super().__init__(sender)
+
     def action_test_binding(self):
         self.reset_focus()
 
-    def get_path(self) -> os.DirEntry:
+    # TODO: use cursor node property of tree?
+    def get_path(self) -> DirEntry:
         line = self._tree_lines[self.cursor_line]
         node = line.path[-1]
         return node.data
+
+    def key_slash(self):
+        self.emit_no_wait(self.ChangePath(self))
 
 
 class LeftDirectoryDisplay(DirectoryDisplay):
@@ -37,6 +46,7 @@ class RightDirectoryDisplay(DirectoryDisplay):
     BINDINGS = [
         ("m", "move_file_dir", "Move file/dir")
     ]
+
     class ToggleDir(Message):
         def __init__(self, sender: MessageTarget):
             super().__init__(sender)
