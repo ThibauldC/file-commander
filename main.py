@@ -5,14 +5,10 @@ from textual import events
 from textual.app import App, ComposeResult
 from textual.css.query import NoMatches
 from textual.message import Message, MessageTarget
-from textual.reactive import reactive, Reactive
-from textual.widgets import Header, Footer, Input, TreeNode, DirectoryTree
+from textual.widgets import Header, Footer, Input
 
 from directory_display import DisplayContainer, RightDirectoryDisplay, LeftDirectoryDisplay, DirectoryDisplay
 
-
-#TODO: use input to change path
-# TODO: use events and/or separate widget classes to clean up code?
 
 class CustomInput(Input):
 
@@ -23,9 +19,6 @@ class CustomInput(Input):
     class ChangePath(Message):
         def __init__(self, sender: MessageTarget):
             super().__init__(sender)
-
-    # def key_enter(self):
-    #     self.emit_no_wait(self.ChangePath(self))
 
 
 class FileCommander(App):
@@ -67,13 +60,20 @@ class FileCommander(App):
         input.value = str(e.sender.path)
 
     def on_input_submitted(self, e: Input.Submitted):
-        e.stop() #BUG: when executed twice in a row it fails
+        e.stop()
         tree = e.sender.origin
-        tree.remove()
-        if isinstance(tree, LeftDirectoryDisplay):
-            self.query_one("#left").mount(LeftDirectoryDisplay(e.value, id=tree.id))
-        elif isinstance(tree, RightDirectoryDisplay):
-            self.query_one("#right").mount(RightDirectoryDisplay(e.value, id=tree.id))
+        if os.path.exists(e.value) and os.path.isdir(e.value):
+            tree.remove()
+            if isinstance(tree, LeftDirectoryDisplay):
+                new_display = LeftDirectoryDisplay(e.value, id=tree.id)
+                self.query_one("#left").mount(new_display)
+            elif isinstance(tree, RightDirectoryDisplay):
+                new_display = RightDirectoryDisplay(e.value, id=tree.id)
+                self.query_one("#right").mount(new_display)
+            else:
+                raise Exception("Wrongly submitted input")
+            new_display.focus()
+            e.sender.value = ""
 
     def key_colon(self):
         self.query_one("CustomInput").focus()
