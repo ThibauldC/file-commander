@@ -25,8 +25,7 @@ class FileCommander(App):
     CSS_PATH = "test.css"
 
     BINDINGS = [
-        ("q", "quit", "Quit"),
-        ("t", "test_path", "Test path")
+        ("q", "quit", "Quit")
     ]
 
     def compose(self) -> ComposeResult:
@@ -74,23 +73,6 @@ class FileCommander(App):
                 raise Exception("Wrongly submitted input")
             new_display.focus()
             e.sender.value = ""
-
-    def key_colon(self):
-        self.query_one("CustomInput").focus()
-
-    def action_test_path(self) -> None:
-        tree = self.query_one("#left_tree")
-        try:
-            #line = tree._tree_lines[tree.cursor_line]
-            line = tree.cursor_node.label.text
-        except IndexError:
-            pass
-        else:
-            # node = line.path[-1]
-            # dir_entry = node.data
-            input = self.query_one("Input")
-            input.focus()
-            input.value = line
 
 
 if __name__ == "__main__":
