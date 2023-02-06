@@ -2,11 +2,12 @@ import os
 import shutil
 from pathlib import Path
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.css.query import NoMatches
 from textual.message import Message, MessageTarget
-from textual.widgets import DirectoryTree
+from textual.widgets import DirectoryTree, TreeNode
 from textual.widgets._directory_tree import DirEntry
 
 
@@ -16,11 +17,35 @@ class DirectoryDisplay(DirectoryTree):
         def __init__(self, sender: MessageTarget):
             super().__init__(sender)
 
-    # TODO: use cursor node property of tree?
     def get_path(self) -> DirEntry:
         line = self._tree_lines[self.cursor_line]
         node = line.path[-1]
         return node.data
+
+    def clear(self) -> None:
+        """Clear all nodes under root."""
+        self._line_cache.clear()
+        self._tree_lines_cached = None
+        self._current_id = 0
+        root_label = self.root._label
+        root_data = self.root.data
+        self.root = TreeNode(
+            self,
+            None,
+            self._new_id(),
+            root_label,
+            root_data,
+            expanded=True,
+        )
+        self._updates += 1
+        self.refresh()
+
+    # TODO: replace by reset() and load_directory when the change is included in the next release of textual: https://github.com/Textualize/textual/pull/1709/files
+    def refresh_path(self):
+        self.clear()
+        self.root.label = Text(self.path)
+        self.root.data = DirEntry(self.path, True)
+        self.load_directory(self.root)
 
     def key_slash(self) -> None:
         self.emit_no_wait(self.ChangePath(self))
