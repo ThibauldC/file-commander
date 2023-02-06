@@ -40,14 +40,11 @@ class FileCommander(App):
     def on_right_directory_display_move(self, m: RightDirectoryDisplay.Move):
         m.stop()
         try:
-            left_tree = self.query_one("#left_tree")
-            right_tree = self.query_one("#right_tree")
+            left_tree: DirectoryDisplay = self.query_one("#left_tree")
+            right_tree: DirectoryDisplay = self.query_one("#right_tree")
             shutil.move(left_tree.get_path().path, right_tree.get_path().path)
-            left_tree.clear()
-            left_tree.data = left_tree.load_directory(left_tree.root) # TODO: refactor this into refresh method
-            #line = right_tree.cursor_line
-            right_tree.clear()
-            right_tree.data = right_tree.load_directory(right_tree.root) #TODO: but auto-expand tree node that was open? -> cursor_node.label
+            left_tree.refresh_path()
+            right_tree.refresh_path()
         except NoMatches:
             pass
 
@@ -60,7 +57,7 @@ class FileCommander(App):
 
     def on_input_submitted(self, e: Input.Submitted):
         e.stop()
-        tree = e.sender.origin
+        tree: DirectoryDisplay = e.sender.origin
         if os.path.exists(e.value) and os.path.isdir(e.value):
             tree.remove()
             if isinstance(tree, LeftDirectoryDisplay):
