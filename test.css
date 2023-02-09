@@ -18,3 +18,7 @@ Input {
 DisplayContainer {
     width: 100%;
 }
+
+TreeInput {
+    width: 20%;
+}
