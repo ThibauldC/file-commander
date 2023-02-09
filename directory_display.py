@@ -1,3 +1,4 @@
+from enum import Enum
 import os
 import shutil
 from pathlib import Path
@@ -11,13 +12,22 @@ from textual.widgets import DirectoryTree, TreeNode
 from textual.widgets._directory_tree import DirEntry
 
 
+class Change(Enum):
+    NewFile = "new_file"
+    NewDir = "new_dir"
+    ChangePath = "change_path"
+    Rename = "rename"
+    Delete = "delete"
+
+
 class DirectoryDisplay(DirectoryTree):
 
-    class ChangePath(Message):
-        def __init__(self, sender: MessageTarget):
+    class ChangeEvent(Message):
+        def __init__(self, sender: MessageTarget, event: Change):
+            self.event = event
             super().__init__(sender)
 
-    def get_path(self) -> DirEntry:
+    def get_current_node_entry(self) -> DirEntry:
         line = self._tree_lines[self.cursor_line]
         node = line.path[-1]
         return node.data
@@ -48,20 +58,19 @@ class DirectoryDisplay(DirectoryTree):
         self.load_directory(self.root)
 
     def key_slash(self) -> None:
-        self.emit_no_wait(self.ChangePath(self))
+        self.emit_no_wait(self.ChangeEvent(self, Change.ChangePath))
 
 
 class LeftDirectoryDisplay(DirectoryDisplay):
     BINDINGS = [
         ("->", "", "Spawn/go to right dir"),
-        ("backspace", "_", "Delete file/dir")
+        ("backspace", "_", "Delete"),
+        ("n", "add_file", "Add file"),
+        ("d", "add_dir", "Add dir"),
+        ("r", "rename", "Rename")
     ]
 
     class ToggleDir(Message):
-        def __init__(self, sender: MessageTarget):
-            super().__init__(sender)
-
-    class DeleteFileDir(Message):
         def __init__(self, sender: MessageTarget):
             super().__init__(sender)
 
@@ -69,7 +78,16 @@ class LeftDirectoryDisplay(DirectoryDisplay):
         self.emit_no_wait(self.ToggleDir(self))
 
     def key_backspace(self):
-        self.emit_no_wait(self.DeleteFileDir(self))
+        self.emit_no_wait(self.ChangeEvent(self, Change.Delete))
+
+    def action_add_file(self):
+        self.emit_no_wait(self.ChangeEvent(self, Change.NewFile))
+
+    def action_add_dir(self):
+        self.emit_no_wait(self.ChangeEvent(self, Change.NewDir))
+
+    def action_rename(self):
+        self.emit_no_wait(self.ChangeEvent(self, Change.Rename))
 
 
 class RightDirectoryDisplay(DirectoryDisplay):
@@ -90,7 +108,7 @@ class RightDirectoryDisplay(DirectoryDisplay):
         self.emit_no_wait(self.ToggleDir(self))
 
     def action_move_file_dir(self) -> None:
-        if self.get_path().is_dir:
+        if self.get_current_node_entry().is_dir:
             self.emit_no_wait(self.Move(self))
 
 
@@ -108,7 +126,7 @@ class DisplayContainer(Container):
                       id="right"))
 
     def on_directory_tree_file_selected(
-        self, event: DirectoryTree.FileSelected
+            self, event: DirectoryTree.FileSelected
     ) -> None:
         event.stop()
         self.query_one("#left_tree_input").value = event.path
@@ -126,19 +144,18 @@ class DisplayContainer(Container):
         e.stop()
         self.query_one("#left_tree").focus()
 
-    def on_left_directory_display_delete_file_dir(self, e: LeftDirectoryDisplay.DeleteFileDir) -> None:
-        e.stop()
-        tree: DirectoryDisplay = e.sender
-        path_to_delete = tree.get_path()
-        if os.path.exists(path_to_delete.path):
-            if path_to_delete.is_dir:
-                shutil.rmtree(path_to_delete.path)
-            else:
-                os.remove(path_to_delete.path)
-            tree.remove()
-            new_display = LeftDirectoryDisplay(tree.path, id=tree.id)
-            self.query_one("#left").mount(new_display)
-            new_display.focus()
+    @staticmethod
+    def on_directory_display_change_event(e: DirectoryDisplay.ChangeEvent) -> None:
+        if e.event == Change.Delete:
+            e.stop()
+            tree: DirectoryDisplay = e.sender
+            path_to_delete = tree.get_current_node_entry()
+            if os.path.exists(path_to_delete.path):
+                if path_to_delete.is_dir:
+                    shutil.rmtree(path_to_delete.path)
+                else:
+                    os.remove(path_to_delete.path)
+                tree.refresh_path()
 
     def action_close_right_screen(self) -> None:
         right_display = self.query_one("#right")
