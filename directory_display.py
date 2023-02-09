@@ -3,12 +3,13 @@ import os
 import shutil
 from pathlib import Path
 
+from rich.syntax import Syntax
 from rich.text import Text
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Vertical
 from textual.css.query import NoMatches
 from textual.message import Message, MessageTarget
-from textual.widgets import DirectoryTree, TreeNode
+from textual.widgets import DirectoryTree, TreeNode, Static
 from textual.widgets._directory_tree import DirEntry
 
 
@@ -67,10 +68,15 @@ class LeftDirectoryDisplay(DirectoryDisplay):
         ("backspace", "_", "Delete"),
         ("n", "add_file", "Add file"),
         ("d", "add_dir", "Add dir"),
-        ("r", "rename", "Rename")
+        ("r", "rename", "Rename"),
+        ("shift+->", "__", "Code view")
     ]
 
     class ToggleDir(Message):
+        def __init__(self, sender: MessageTarget):
+            super().__init__(sender)
+
+    class ToggleCode(Message):
         def __init__(self, sender: MessageTarget):
             super().__init__(sender)
 
@@ -79,6 +85,9 @@ class LeftDirectoryDisplay(DirectoryDisplay):
 
     def key_backspace(self):
         self.emit_no_wait(self.ChangeEvent(self, Change.Delete))
+
+    def key_shift_right(self):
+        self.emit_no_wait(self.ToggleCode(self))
 
     def action_add_file(self):
         self.emit_no_wait(self.ChangeEvent(self, Change.NewFile))
@@ -122,8 +131,7 @@ class DisplayContainer(Container):
     def compose(self) -> ComposeResult:
         yield Container(
             Container(LeftDirectoryDisplay(self.path, id="left_tree"), classes="display_container", id="left"),
-            Container(classes="display_container",
-                      id="right"))
+            Container(classes="display_container", id="right"))
 
     def on_directory_tree_file_selected(
             self, event: DirectoryTree.FileSelected
@@ -137,8 +145,32 @@ class DisplayContainer(Container):
             right_tree = self.query_one("#right_tree")
             right_tree.focus()
         except NoMatches:
+            if self.query_one("#right").query("#code"):
+                self.query_one("#right").query_one("#code").remove()
             self.query_one("#right").mount(RightDirectoryDisplay(str(Path.home()), id="right_tree"))
             self.query_one("#right_tree").focus()
+
+    def on_left_directory_display_toggle_code(self, e: LeftDirectoryDisplay.ToggleCode) -> None:
+        e.stop()
+        try:
+            code_view = self.query_one("#code_view")
+        except NoMatches:
+            if self.query_one("#right").query("#right_tree"):
+                self.query_one("#right").query_one("#right_tree").remove()
+            self.query_one("#right").mount(Vertical(Static(id="code_view", expand=True), id="code"))
+            code_view = self.query_one("#code_view")
+
+        current_node = e.sender.get_current_node_entry()
+        if not current_node.is_dir:
+            syntax = Syntax.from_path(
+                current_node.path,
+                line_numbers=True,
+                word_wrap=False,
+                indent_guides=True,
+                theme="github-dark",
+            )
+            code_view.update(syntax)
+            code_view.scroll_home(animate=False)
 
     def on_right_directory_display_toggle_dir(self, e: RightDirectoryDisplay.ToggleDir) -> None:
         e.stop()
