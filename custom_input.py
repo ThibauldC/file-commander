@@ -6,6 +6,7 @@ from textual.widgets import Input
 
 from directory_display import DirectoryDisplay, Change
 
+
 class CustomInput(Input):
 
     def __init__(self, origin: DirectoryDisplay | None = None, action_to_perform: str | Change | None = None):
