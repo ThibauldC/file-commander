@@ -191,6 +191,6 @@ class DisplayContainer(Container):
 
     def action_close_right_screen(self) -> None:
         right_display = self.query_one("#right")
-        right_tree = right_display.query("DirectoryDisplay")
+        right_tree = right_display.query()
         if right_tree:
             right_tree[0].remove()
