@@ -5,12 +5,12 @@ from textual.app import App, ComposeResult
 from textual.css.query import NoMatches
 from textual.widgets import Header, Footer
 
-from custom_input import CustomInput
-from directory_display import DisplayContainer, RightDirectoryDisplay, LeftDirectoryDisplay, DirectoryDisplay, Change
+from src.custom_input import CustomInput
+from src.directory_display import DisplayContainer, RightDirectoryDisplay, LeftDirectoryDisplay, DirectoryDisplay, Change
 
 
 class FileCommander(App):
-    CSS_PATH = "test.css"
+    CSS_PATH = "../test.css"
 
     BINDINGS = [
         ("q", "quit", "Quit")
@@ -74,6 +74,6 @@ class FileCommander(App):
             e.sender.value = ""
 
 
-if __name__ == "__main__":
+def main():
     file_commander = FileCommander()
     file_commander.run()

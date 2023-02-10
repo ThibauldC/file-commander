@@ -4,7 +4,7 @@ import shutil
 from textual.message import Message, MessageTarget
 from textual.widgets import Input
 
-from directory_display import DirectoryDisplay, Change
+from src.directory_display import DirectoryDisplay, Change
 
 
 class CustomInput(Input):
