@@ -126,11 +126,9 @@ class DisplayContainer(Container):
         ("c", "close_right_screen", "Close right screen")
     ]
 
-    path = "/Users/thibauld.croonenborghs/Desktop/test"
-
     def compose(self) -> ComposeResult:
         yield Container(
-            Container(LeftDirectoryDisplay(self.path, id="left_tree"), classes="display_container", id="left"),
+            Container(LeftDirectoryDisplay(str(Path.home()), id="left_tree"), classes="display_container", id="left"),
             Container(classes="display_container", id="right"))
 
     def on_directory_tree_file_selected(
