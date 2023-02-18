@@ -9,7 +9,7 @@ from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.css.query import NoMatches
 from textual.message import Message, MessageTarget
-from textual.widgets import DirectoryTree, TreeNode, Static
+from textual.widgets import DirectoryTree, Static
 from textual.widgets._directory_tree import DirEntry
 
 
@@ -33,33 +33,34 @@ class DirectoryDisplay(DirectoryTree):
         node = line.path[-1]
         return node.data
 
-    def clear(self) -> None:
-        """Clear all nodes under root."""
-        self._line_cache.clear()
-        self._tree_lines_cached = None
-        self._current_id = 0
-        root_label = self.root._label
-        root_data = self.root.data
-        self.root = TreeNode(
-            self,
-            None,
-            self._new_id(),
-            root_label,
-            root_data,
-            expanded=True,
-        )
-        self._updates += 1
-        self.refresh()
+    # def clear(self) -> None:
+    #     """Clear all nodes under root."""
+    #     self._line_cache.clear()
+    #     self._tree_lines_cached = None
+    #     self._current_id = 0
+    #     root_label = self.root._label
+    #     root_data = self.root.data
+    #     self.root = TreeNode(
+    #         self,
+    #         None,
+    #         self._new_id(),
+    #         root_label,
+    #         root_data,
+    #         expanded=True,
+    #     )
+    #     self._updates += 1
+    #     self.refresh()
 
     # TODO: replace by reset() and load_directory when the change is included in the next release of textual: https://github.com/Textualize/textual/pull/1709/files
     def refresh_path(self):
-        self.clear()
-        self.root.label = Text(self.path)
-        self.root.data = DirEntry(self.path, True)
+        # self.clear()
+        # self.root.label = Text(self.path)
+        # self.root.data = DirEntry(self.path, True)
+        self.reset(Text(self.path), DirEntry(self.path, True))
         self.load_directory(self.root)
 
     def key_slash(self) -> None:
-        self.emit_no_wait(self.ChangeEvent(self, Change.ChangePath))
+        self.post_message_no_wait(self.ChangeEvent(self, Change.ChangePath))
 
 
 class LeftDirectoryDisplay(DirectoryDisplay):
@@ -81,22 +82,22 @@ class LeftDirectoryDisplay(DirectoryDisplay):
             super().__init__(sender)
 
     def key_right(self):
-        self.emit_no_wait(self.ToggleDir(self))
+        self.post_message_no_wait(self.ToggleDir(self))
 
     def key_backspace(self):
-        self.emit_no_wait(self.ChangeEvent(self, Change.Delete))
+        self.post_message_no_wait(self.ChangeEvent(self, Change.Delete))
 
     def key_shift_right(self):
-        self.emit_no_wait(self.ToggleCode(self))
+        self.post_message_no_wait(self.ToggleCode(self))
 
     def action_add_file(self):
-        self.emit_no_wait(self.ChangeEvent(self, Change.NewFile))
+        self.post_message_no_wait(self.ChangeEvent(self, Change.NewFile))
 
     def action_add_dir(self):
-        self.emit_no_wait(self.ChangeEvent(self, Change.NewDir))
+        self.post_message_no_wait(self.ChangeEvent(self, Change.NewDir))
 
     def action_rename(self):
-        self.emit_no_wait(self.ChangeEvent(self, Change.Rename))
+        self.post_message_no_wait(self.ChangeEvent(self, Change.Rename))
 
 
 class RightDirectoryDisplay(DirectoryDisplay):
@@ -114,11 +115,11 @@ class RightDirectoryDisplay(DirectoryDisplay):
             super().__init__(sender)
 
     def key_left(self) -> None:
-        self.emit_no_wait(self.ToggleDir(self))
+        self.post_message_no_wait(self.ToggleDir(self))
 
     def action_move_file_dir(self) -> None:
         if self.get_current_node_entry().is_dir:
-            self.emit_no_wait(self.Move(self))
+            self.post_message_no_wait(self.Move(self))
 
 
 class DisplayContainer(Container):

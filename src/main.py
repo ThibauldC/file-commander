@@ -45,7 +45,7 @@ class FileCommander(App):
         path_to_display = str(e.sender.path)
         if e.event == Change.Rename:
             path_to_display = e.sender.get_current_node_entry().path
-        input.value = path_to_display
+        input.value = path_to_display + "/"
 
     @staticmethod
     def on_custom_input_refresh_path(e: CustomInput.RefreshPath):
