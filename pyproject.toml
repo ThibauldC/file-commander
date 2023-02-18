@@ -11,7 +11,7 @@ fcommander = 'src.main:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-textual = "^0.10.1"
+textual = "^0.11.0"
 
 
 [build-system]
