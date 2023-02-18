@@ -33,29 +33,7 @@ class DirectoryDisplay(DirectoryTree):
         node = line.path[-1]
         return node.data
 
-    # def clear(self) -> None:
-    #     """Clear all nodes under root."""
-    #     self._line_cache.clear()
-    #     self._tree_lines_cached = None
-    #     self._current_id = 0
-    #     root_label = self.root._label
-    #     root_data = self.root.data
-    #     self.root = TreeNode(
-    #         self,
-    #         None,
-    #         self._new_id(),
-    #         root_label,
-    #         root_data,
-    #         expanded=True,
-    #     )
-    #     self._updates += 1
-    #     self.refresh()
-
-    # TODO: replace by reset() and load_directory when the change is included in the next release of textual: https://github.com/Textualize/textual/pull/1709/files
     def refresh_path(self):
-        # self.clear()
-        # self.root.label = Text(self.path)
-        # self.root.data = DirEntry(self.path, True)
         self.reset(Text(self.path), DirEntry(self.path, True))
         self.load_directory(self.root)
 

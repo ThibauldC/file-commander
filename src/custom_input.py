@@ -29,17 +29,13 @@ class CustomInput(Input):
                 if not os.path.exists(self.value):
                     with open(self.value, "w"):
                         pass
-                #self.post_message_no_wait(self.RefreshPath(self))
             case Change.NewDir:
                 if not os.path.exists(self.value):
                     os.mkdir(self.value)
-                #self.post_message_no_wait(self.RefreshPath(self))
             case Change.ChangePath:
-                #self.post_message_no_wait(self.ChangePath(self))
                 message = self.ChangePath(self)
             case Change.Rename:
                 os.rename(self.origin.get_current_node_entry().path, self.value)
-                #self.post_message_no_wait(self.RefreshPath(self))
             case Change.Delete:
                 entry_to_delete = self.origin.get_current_node_entry()
                 if os.path.exists(entry_to_delete.path):
@@ -47,7 +43,6 @@ class CustomInput(Input):
                         shutil.rmtree(entry_to_delete.path)
                     else:
                         os.remove(entry_to_delete.path)
-                #self.post_message_no_wait(self.RefreshPath(self))
             case _:
                 self.value = "this doesn't work"
         self.post_message_no_wait(message)
